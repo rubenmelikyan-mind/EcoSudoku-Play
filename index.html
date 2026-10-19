@@ -8,6 +8,9 @@
 <title>EcoSudoku — Play</title>
 <style>
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#171c13;color:#f8e6c0;font-family:system-ui,sans-serif;overscroll-behavior:none}body{display:flex;justify-content:center;overflow:hidden;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}#game{position:relative;width:100%;max-width:56.25vh;height:100%;background:#25291b}canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}#loading{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:28px;gap:18px;background:radial-gradient(ellipse at top,#465536,#25291b 70%)}h1{font-size:clamp(30px,7vw,52px);margin:0;color:#e4d39a}p{line-height:1.5;margin:0;font-size:15px}button{padding:16px 28px;background:#e4d39a;color:#202a19;border:0;border-radius:10px;font:700 18px system-ui;cursor:pointer}button:disabled{opacity:.6;cursor:wait}progress{width:85%;height:14px;accent-color:#b1c773}#status{min-height:3em}#note{font-size:12px;color:#cbd0bb;max-width:310px}#error{display:none;color:#ffdbbe;white-space:pre-wrap;overflow-wrap:anywhere;max-height:35vh;overflow:auto;font-size:13px}@supports(height:100dvh){#game{max-width:56.25dvh}}
+/* Unity creates its keyboard input dynamically. Keep it above Safari's
+   focus-zoom threshold before the first focus, including inline styles. */
+input,textarea{font-size:18px!important;line-height:1.4!important}
 </style>
 </head>
 <body>
@@ -23,6 +26,27 @@
 </section>
 </main>
 <script>
+// Mobile keyboards can leave the layout viewport scrolled after dismissal.
+// Keep user pinch zoom available; only restore the game page's scroll position.
+const isKeyboardField=node=>node instanceof Element&&node.matches('input,textarea');
+let keyboardWasOpen=false;
+function restoreGamePosition(){
+ if(isKeyboardField(document.activeElement))return;
+ window.scrollTo(0,0);
+ document.documentElement.scrollTop=0;
+ document.body.scrollTop=0;
+}
+document.addEventListener('focusin',event=>{
+ if(isKeyboardField(event.target))keyboardWasOpen=true;
+});
+document.addEventListener('focusout',event=>{
+ if(!isKeyboardField(event.target))return;
+ // Wait for both the browser keyboard animation and Unity's input removal.
+ [0,150,400,800].forEach(delay=>setTimeout(restoreGamePosition,delay));
+});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>{
+ if(keyboardWasOpen&&!isKeyboardField(document.activeElement))restoreGamePosition();
+});
 const canvas=document.getElementById('unity-canvas'),button=document.getElementById('play'),status=document.getElementById('status'),progress=document.getElementById('progress'),error=document.getElementById('error');
 function fail(message){error.textContent=message;error.style.display='block';status.textContent='The game could not start.';button.disabled=false;button.textContent='Reload and retry';button.onclick=()=>location.reload();}
 button.onclick=()=>{
