@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#25291b">
+<meta name="description" content="Play EcoSudoku: grow a balanced world, survive each harvest, and beat your local high score.">
+<title>EcoSudoku — Play</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#171c13;color:#f8e6c0;font-family:system-ui,sans-serif;overscroll-behavior:none}body{display:flex;justify-content:center;overflow:hidden;height:100dvh;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}#game{position:relative;width:100%;max-width:56.25vh;height:100%;background:#25291b}canvas{display:block;width:100%;height:100%;outline:none;touch-action:none}#loading{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:28px;gap:18px;background:radial-gradient(ellipse at top,#465536,#25291b 70%)}h1{font-size:clamp(30px,7vw,52px);margin:0;color:#e4d39a}p{line-height:1.5;margin:0;font-size:15px}button{padding:16px 28px;background:#e4d39a;color:#202a19;border:0;border-radius:10px;font:700 18px system-ui;cursor:pointer}button:disabled{opacity:.6;cursor:wait}progress{width:85%;height:14px;accent-color:#b1c773}#status{min-height:3em}#note{font-size:12px;color:#cbd0bb;max-width:310px}#error{display:none;color:#ffdbbe;white-space:pre-wrap;overflow-wrap:anywhere;max-height:35vh;overflow:auto;font-size:13px}@supports(height:100dvh){#game{max-width:56.25dvh}}
+</style>
+</head>
+<body>
+<main id="game">
+<canvas id="unity-canvas" width="540" height="960" tabindex="0" aria-label="EcoSudoku game"></canvas>
+<section id="loading" aria-label="Load game">
+<h1>EcoSudoku</h1><p>Grow your world.<br>Keep the balance. Beat your score.</p>
+<button id="play" type="button">Play EcoSudoku</button>
+<progress id="progress" value="0" max="1" hidden aria-label="Game download progress"></progress>
+<p id="status" role="status">Play in portrait for the best experience.</p>
+<p id="note">No ads or account needed. Finished runs join the shared online leaderboard. Use Safari or Chrome, and keep this tab open while playing.</p>
+<p id="error" role="alert"></p>
+</section>
+</main>
+<script>
+const canvas=document.getElementById('unity-canvas'),button=document.getElementById('play'),status=document.getElementById('status'),progress=document.getElementById('progress'),error=document.getElementById('error');
+function fail(message){error.textContent=message;error.style.display='block';status.textContent='The game could not start.';button.disabled=false;button.textContent='Reload and retry';button.onclick=()=>location.reload();}
+button.onclick=()=>{
+ button.disabled=true;progress.hidden=false;status.textContent='Downloading the game…';
+ const script=document.createElement('script');script.src='Build/WebGL.loader.js';
+ script.onerror=()=>fail('Download failed. Check your connection, then reload.');
+ script.onload=()=>createUnityInstance(canvas,{
+  dataUrl:'Build/WebGL.data.unityweb',frameworkUrl:'Build/WebGL.framework.js.unityweb',codeUrl:'Build/WebGL.wasm.unityweb',
+  streamingAssetsUrl:'StreamingAssets',companyName: "MIndLabZ",productName: "EcoSudoku",productVersion: "1.0",
+  devicePixelRatio:Math.min(window.devicePixelRatio||1,1.5),autoSyncPersistentDataPath:true,
+  showBanner:(message,type)=>{if(type==='error')fail(message);else console.warn(message);}
+ },value=>{progress.value=value;status.textContent=value<.9?'Downloading the game… '+Math.round(value*100)+'%':'Preparing your garden…';}).then(instance=>{
+  window.ecoGame=instance;document.getElementById('loading').style.display='none';canvas.focus();
+ }).catch(message=>fail(String(message)));
+ document.body.appendChild(script);
+};
+</script>
+</body>
+</html>
+
+
